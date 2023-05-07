@@ -1,0 +1,9 @@
+
+hellompi:16056 terminated with signal 6 at PC=7ffbe8e6d387 SP=7ffcd193a0f8.  Backtrace:
+/usr/lib64/libc.so.6(gsignal+0x37)[0x7ffbe8e6d387]
+/usr/lib64/libc.so.6(abort+0x148)[0x7ffbe8e6ea78]
+/usr/lib64/libc.so.6(+0x78f67)[0x7ffbe8eaff67]
+/usr/lib64/libc.so.6(+0x7f474)[0x7ffbe8eb6474]
+./hellompi[0x400bc8]
+/usr/lib64/libc.so.6(__libc_start_main+0xf5)[0x7ffbe8e59555]
+./hellompi[0x400979]
