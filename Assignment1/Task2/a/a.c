@@ -1,18 +1,20 @@
 /************************************************************************/
-/* Program: hellomp.c                                                   */ 
-/* Author: Your Name <email address>                                    */
-/* matriclenumber:                                                      */
+/* Program: a.c                                                  */ 
+/* Author: Rene Noah Kouache    s1750463@stud.uni-farnkfurt.de                                 */
+/* matriclenumber:   5782459                                                   */
 /* Assignment : 1                                                       */	
-/* Task: 1                                                              */
-/* Parameters: no                                                       */
+/* Task: 2a                                                              */
+/* Parameters: array lenght of random numbers                                                       */
 /* Environment variables: no                                            */
 /*                                                                      */
 /* Description:                                                         */
 /*                                                                      */
-/* hellompi is a simple example program for MPI                         */
-/*                                                                      */
-/* For each CPU, where the program is running,                          */
-/* the hostname will be printed.                                        */
+/*     Each process calculates min, max and sum of an array thats filled with random numbers                     */
+/*      The size of the array is determined by an console input Parameter
+ Each Process will send the solution to the next Process in line. The Proces will be send sequentally to all Processes one by one. The last process will send it to
+ the first again. The first Process will then take the tim and print the answers.                                                                */	
+/*                           */
+/*                                         */
 /*                                                                      */
 /************************************************************************/ 
 
@@ -42,14 +44,18 @@ int main(int argc, char* argv[ ])
 
 	MPI_Init(&argc, &argv);		 		// initializing of MPI-Interface
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank); 	// get your rank
-	/*Code reacts to flag -h*/
-	//Only the main Rank should answer -h
+	
+
 	if(argc < 2){
-		printf("Keine richtigen Parameter. Bitte die Anzahl an Zufallsveriablen angeben.\n")	;
+		printf("Keine richtigen Parameter. Bitte die Anzahl an Zufallsveriablen angeben oder -h für Hilfe\n")	;
+		return 0;
+	}
+	else if(strcmp(argv[1],"-h") == 0){
+		printf("Hier kommt die Hilfe hin\n")	;
 		return 0;
 	}
     else{        
-        int num = atoi(argv[1]);        
+        int num = atoi(argv[1]);    		 
 		length = num;
     }    
 
@@ -93,7 +99,7 @@ int main(int argc, char* argv[ ])
 		/*Recieve time stamp at the end*/
 		double time_at_end = MPI_Wtime();
 		double seconds_between_begin_and_end = time_at_end - time_at_start;
-		printf("Time passed between first and last Process %f. Thats means every Process needed approxamitly %f seconds.",seconds_between_begin_and_end,seconds_between_begin_and_end/size);
+		printf("Time passed between first and last Process %f. Thats means every Process needed approxamitly %f seconds.\n",seconds_between_begin_and_end,seconds_between_begin_and_end/size);
 
 	}
 	else{        

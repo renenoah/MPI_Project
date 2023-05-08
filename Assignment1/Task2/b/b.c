@@ -1,18 +1,19 @@
 /************************************************************************/
-/* Program: hellomp.c                                                   */ 
-/* Author: Your Name <email address>                                    */
-/* matriclenumber:                                                      */
+/* Program: b.c                                                  */ 
+/* Author: Rene Noah Kouache    s1750463@stud.uni-farnkfurt.de                                 */
+/* matriclenumber:   5782459                                                   */
 /* Assignment : 1                                                       */	
-/* Task: 1                                                              */
-/* Parameters: no                                                       */
+/* Task: 2b                                                              */
+/* Parameters: array lenght of random numbers                                                      */
 /* Environment variables: no                                            */
 /*                                                                      */
 /* Description:                                                         */
 /*                                                                      */
-/* hellompi is a simple example program for MPI                         */
-/*                                                                      */
-/* For each CPU, where the program is running,                          */
-/* the hostname will be printed.                                        */
+/*     Each process calculates min, max and sum of an array thats filled with random numbers                     */
+/*      The size of the array is determined by an console input Parameter
+            The calculated answers will then be send in a tree topology from all to one.                                                  */	
+/*                           */
+/*                                         */
 /*                                                                      */
 /************************************************************************/ 
 
@@ -43,14 +44,16 @@ int main(int argc, char* argv[ ])
 
 	MPI_Init(&argc, &argv);		 		// initializing of MPI-Interface
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank); 	// get your rank
-	/*Code reacts to flag -h*/
-	//Only the main Rank should answer -h
 	if(argc < 2){
-		printf("Keine richtigen Parameter. Bitte die Anzahl an Zufallsveriablen angeben.\n")	;
+		printf("Keine richtigen Parameter. Bitte die Anzahl an Zufallsveriablen angeben oder -h für Hilfe\n")	;
+		return 0;
+	}
+	else if(strcmp(argv[1],"-h") == 0){
+		printf("Hier kommt die Hilfe hin\n")	;
 		return 0;
 	}
     else{        
-        int num = atoi(argv[1]);        
+        int num = atoi(argv[1]);    		 
 		length = num;
     }    
 
@@ -87,7 +90,7 @@ int main(int argc, char* argv[ ])
 	create_random_array(length,random_numbers,my_rank);
 	calc_min_max_sum_from_array(length,random_numbers,calculated_result);
 	printf("Prozess: %d, min %d, max %d, sum %d\n",my_rank,calculated_result[0],calculated_result[1],calculated_result[2]);
-
+	//get time Stamp
 	double time_at_start;
 	if(my_rank == 0){
 		time_at_start = MPI_Wtime();
@@ -105,22 +108,24 @@ int main(int argc, char* argv[ ])
 			continue;
 		}
 		if(my_rank > pa){
+			//If my Rank is higher then send calculated Array to Partner. Job of this Process is done
 			for(int i = 0; i < 3; i++){
 				MPI_Send ( &calculated_result, 3, MPI_INT, pa, tag, MPI_COMM_WORLD);		
 			}
 			break;
 		}
 		else{
-			//Recieving min max sum from last Prozess
+			//Recieving from Partner
 			MPI_Status status; /* Status variable */	
 			int ergebnis[3];
 			for(int i = 0; i < 3; i++){
 				MPI_Recv ( &ergebnis,3, MPI_INT, pa, tag, MPI_COMM_WORLD,&status );			
 			}
+			//Merging the recieved and self calculated Arrays
 			combining_two_calculated_min_max_sum(calculated_result,ergebnis);
 		}
 
-		printf("Wir sind aktuell in dem Prozess %d zwei hoch t %d  ist mein Partner %d miot der SIze %d \n",my_rank,two_over_t,pa,size);
+		// printf("Wir sind aktuell in dem Prozess %d zwei hoch t %d  ist mein Partner %d miot der SIze %d \n",my_rank,two_over_t,pa,size);
 
 	}
 	if(my_rank == 0){
@@ -138,7 +143,7 @@ int main(int argc, char* argv[ ])
  
 	return 0;		// end of progam with exit code 0 
 } 
-
+/*Recieves an Array and fills it with random numbers*/
 int create_random_array(int length_of_array, int array[], int rank_for_seed){
         //Filling Array with random numbers
 		srand(time(NULL) * rank_for_seed);  
@@ -147,6 +152,7 @@ int create_random_array(int length_of_array, int array[], int rank_for_seed){
             // printf("%d   ",array[i]);
 		}
 }
+/* Calculates min max and sum form given array*/
 int calc_min_max_sum_from_array(int length_of_array,int input_array[],int result[]){
 	result[0] = input_array[0]; //min
     result[1] = input_array[0];	//max
@@ -157,12 +163,13 @@ int calc_min_max_sum_from_array(int length_of_array,int input_array[],int result
 		if(result[1] < input_array[i]) result[1] = input_array[i];
 	}
 }
+/*combines two [min,max,sum] arrays. And writes answers into first array*/
 int combining_two_calculated_min_max_sum(int first[],int second[]){
 	if(first[0] > second[0])first[0] = second[0];
 	if(first[1] < second[1])first[1] = second[1];
 	first[2] = first[2] + second[2];
 }
-
+/*returns 2 times input given.*/
 int custom_pow_base_two(int faktor){
 	if(faktor == 0)return 1;
 	else{
