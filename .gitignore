@@ -1,0 +1,6 @@
+.profile
+.bash_history
+.cache/
+.dotnet/
+.ssh/
+.vscode-server/
