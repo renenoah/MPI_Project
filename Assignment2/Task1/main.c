@@ -113,114 +113,123 @@ int main(int argc, char* argv[ ])
 
     }
 
-    // qsort( random_numbers, LENGTH, sizeof(int),compare);
+    qsort( random_numbers, LENGTH, sizeof(int),compare);
 
-    // /*
-    // First we will open the persitent channels to our left and right partner.
-    // Special Case for the first an last Process
-    // */
-    // int has_left = 0,has_right = 0;
-    // MPI_Request request_left_send;
-    // MPI_Request request_left_recieve;
-    // MPI_Request request_right_send;    
-    // MPI_Request request_right_recieve;
-    // MPI_Status status_left_send;
-    // MPI_Status status_left_recieve;
-    // MPI_Status status_right_send;    
-    // MPI_Status status_right_recieve;
-    // int recieved[LENGTH]; //Array that holds the values from Partner    
-    // if(my_rank == 0){
-    //     has no left Partner establish only right side       
-    //     right side
-    //     MPI_Recv_init(&recieved,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_recieve);
-    //     MPI_Send_init(&random_numbers,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_send);  
-    //     has_right = 1;      
-    // }
-    // else if (my_rank == size-1){
-    //     has no right Partner establish only left side
-    //     left side
-    //     MPI_Recv_init(&recieved,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_recieve);
-    //     MPI_Send_init(&random_numbers,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_send);
-    //     has_left = 1;
-    // }
-    // else{
-    //     has left an right Partner
-    //     left side
-    //     MPI_Recv_init(&recieved,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_recieve);
-    //     MPI_Send_init(&random_numbers,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_send);
-    //     right side
-    //     MPI_Recv_init(&recieved,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_recieve);
-    //     MPI_Send_init(&random_numbers,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_send);
+    /*
+    First we will open the persitent channels to our left and right partner.
+    Special Case for the first an last Process
+    */
+    int has_left = 0,has_right = 0;
+    MPI_Request request_left_send;
+    MPI_Request request_left_recieve;
+    MPI_Request request_right_send;    
+    MPI_Request request_right_recieve;
+    MPI_Status status_left_send;
+    MPI_Status status_left_recieve;
+    MPI_Status status_right_send;    
+    MPI_Status status_right_recieve;
+    int recieved[LENGTH]; //Array that holds the values from Partner    
+    if(my_rank == 0){
+        // has no left Partner establish only right side       
+        // right side
+        MPI_Recv_init(&recieved,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_recieve);
+        MPI_Send_init(&random_numbers,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_send);  
+        has_right = 1;      
+    }
+    else if (my_rank == size-1){
+        // has no right Partner establish only left side
+        // left side
+        MPI_Recv_init(&recieved,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_recieve);
+        MPI_Send_init(&random_numbers,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_send);
+        has_left = 1;
+    }
+    else{
+        // has left an right Partner
+        // left side
+        MPI_Recv_init(&recieved,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_recieve);
+        MPI_Send_init(&random_numbers,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_send);
+        // right side
+        MPI_Recv_init(&recieved,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_recieve);
+        MPI_Send_init(&random_numbers,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_send);
 
-    //     has_left = 1;
-    //     has_right = 1;
-    // }
-    // /*
-    // we need n steps for worstcase array
-    // */
-    // for(int i = 0; i < size;i++){
-    //     if(i%2==0){
-    //         We are in an even step
-    //         Even ranks and 0 should communicate with the right partner and get the left side of the 2*Lenght Array            
-    //         odd ranks should communicate with the left partner and hold the right side of the 2*Length Array
-    //         if(my_rank%2==0){
-    //             We are in an even rank => communicate with right side
-    //             if(!has_right)continue;
-    //             MPI_Start(&request_right_send);
-    //             MPI_Start(&request_right_recieve);
-    //             MPI_Wait(&request_right_recieve,&status_right_recieve);
-    //             As soon as we recieved our Array we can already start extracting only the numbers we need
-    //             extract_wanted_numbers(LENGTH,random_numbers,recieved,LEFT);
-    //             MPI_Wait(&request_right_send,&status_right_send);
+        has_left = 1;
+        has_right = 1;
+    }
+    /*
+    we need n steps for worstcase array
+    */
+    for(int i = 0; i < size;i++){
+        if(i%2==0){
+            // We are in an even step
+            // Even ranks and 0 should communicate with the right partner and get the left side of the 2*Lenght Array            
+            // odd ranks should communicate with the left partner and hold the right side of the 2*Length Array
+            if(my_rank%2==0){
+                // We are in an even rank => communicate with right side
+                if(!has_right)continue;
+                MPI_Start(&request_right_send);
+                MPI_Start(&request_right_recieve);
+                MPI_Wait(&request_right_recieve,&status_right_recieve);
+                // As soon as we recieved our Array we can already start extracting only the numbers we need
+                extract_wanted_numbers(LENGTH,random_numbers,recieved,LEFT);
+                MPI_Wait(&request_right_send,&status_right_send);
                 
-    //         }
-    //         else{
-    //             We are in an odd rank => communicate with left side
-    //             if(!has_left)continue;
-    //             MPI_Start(&request_left_send);
-    //             MPI_Start(&request_left_recieve);
-    //             MPI_Wait(&request_left_recieve,&status_left_recieve);
-    //             extract_wanted_numbers(LENGTH,random_numbers,recieved,RIGHT);
-    //             MPI_Wait(&request_left_send,&status_left_send);                
-    //         }
-    //     }
-    //     else{
-    //         We are in an odd step
-    //         Even ranks and 0 should communicate with the left partner and get the right side of the 2*Lenght Array            
-    //         odd ranks should communicate with the right partner and hold the left side of the 2*Length Array
-    //         if(my_rank%2==0){
-    //             We are in an even rank
-    //             if(!has_left)continue;
-    //             MPI_Start(&request_left_send);
-    //             MPI_Start(&request_left_recieve);
-    //             MPI_Wait(&request_left_recieve,&status_left_recieve);
-    //             extract_wanted_numbers(LENGTH,random_numbers,recieved,RIGHT);
-    //             MPI_Wait(&request_left_send,&status_left_send); 
-    //         }
-    //         else{
-    //             We are in an odd rank
-    //             We are in an even rank => communicate with right side
-    //             if(!has_right)continue;
-    //             MPI_Start(&request_right_send);
-    //             MPI_Start(&request_right_recieve);
-    //             MPI_Wait(&request_right_recieve,&status_right_recieve);
-    //             As soon as we recieved our Array we can already start extracting only the numbers we need
-    //             extract_wanted_numbers(LENGTH,random_numbers,recieved,LEFT);
-    //             MPI_Wait(&request_right_send,&status_right_send);
-    //         }
+            }
+            else{
+                // We are in an odd rank => communicate with left side
+                if(!has_left)continue;
+                MPI_Start(&request_left_send);
+                MPI_Start(&request_left_recieve);
+                MPI_Wait(&request_left_recieve,&status_left_recieve);
+                extract_wanted_numbers(LENGTH,random_numbers,recieved,RIGHT);
+                MPI_Wait(&request_left_send,&status_left_send);                
+            }
+        }
+        else{
+            // We are in an odd step
+            // Even ranks and 0 should communicate with the left partner and get the right side of the 2*Lenght Array            
+            // odd ranks should communicate with the right partner and hold the left side of the 2*Length Array
+            if(my_rank%2==0){
+                // We are in an even rank
+                if(!has_left)continue;
+                MPI_Start(&request_left_send);
+                MPI_Start(&request_left_recieve);
+                MPI_Wait(&request_left_recieve,&status_left_recieve);
+                extract_wanted_numbers(LENGTH,random_numbers,recieved,RIGHT);
+                MPI_Wait(&request_left_send,&status_left_send); 
+            }
+            else{
+                // We are in an odd rank
+                // We are in an even rank => communicate with right side
+                if(!has_right)continue;
+                MPI_Start(&request_right_send);
+                MPI_Start(&request_right_recieve);
+                MPI_Wait(&request_right_recieve,&status_right_recieve);
+                // As soon as we recieved our Array we can already start extracting only the numbers we need
+                extract_wanted_numbers(LENGTH,random_numbers,recieved,LEFT);
+                MPI_Wait(&request_right_send,&status_right_send);
+            }
 
-    //     }
-    // }
+        }
+    }
 
     // print_int_array(LENGTH,random_numbers);
     
     // print_int_array_with_process(LENGTH,random_numbers,my_rank);
 
-	MPI_Finalize();		// finalizing MPI interface
+	
     if(my_rank == 0){
         //Printing all recieved numbers
-        Node * runner = Headnode;
+        MPI_Status status;
+        Node * runner = Headnode->next;
         printf("Danach \n");
+        int buffer[LENGTH];
+        for(size_t i = 1; i < size; i++){
+            MPI_Recv ( &buffer,LENGTH, MPI_INT, i, tag, MPI_COMM_WORLD,&status );
+            runner->rank = i;            
+            copy_array(runner->numbers,buffer,LENGTH);
+            runner = runner->next;
+        }
+        runner = Headnode;
         while(runner){
             print_int_array(LENGTH,runner->numbers);            
             runner = runner->next;
@@ -233,7 +242,11 @@ int main(int argc, char* argv[ ])
             Headnode = next;
         }
     }
- 
+    else{
+        MPI_Send ( &random_numbers, LENGTH, MPI_INT, 0, tag, MPI_COMM_WORLD);	
+    }
+
+    MPI_Finalize();		// finalizing MPI interface
 	return 0;		// end of progam with exit code 0 
 } 
 
