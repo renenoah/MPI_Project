@@ -102,6 +102,7 @@ int main(int argc, char* argv[ ])
         Node* next = Headnode;
         printf("Davor \n");
         while(next){
+            printf("Process %d : ",next->rank); 
             print_int_array(LENGTH,next->numbers);
             next = next->next;
         }
@@ -129,28 +130,29 @@ int main(int argc, char* argv[ ])
     MPI_Status status_right_send;    
     MPI_Status status_right_recieve;
     int recieved[LENGTH]; //Array that holds the values from Partner    
+    int send[LENGTH]; //Array holds the values that needs ti be send in a step  
     if(my_rank == 0){
         // has no left Partner establish only right side       
         // right side
         MPI_Recv_init(&recieved,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_recieve);
-        MPI_Send_init(&random_numbers,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_send);  
+        MPI_Send_init(&send,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_send);  
         has_right = 1;      
     }
     else if (my_rank == size-1){
         // has no right Partner establish only left side
         // left side
         MPI_Recv_init(&recieved,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_recieve);
-        MPI_Send_init(&random_numbers,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_send);
+        MPI_Send_init(&send,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_send);
         has_left = 1;
     }
     else{
         // has left an right Partner
         // left side
         MPI_Recv_init(&recieved,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_recieve);
-        MPI_Send_init(&random_numbers,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_send);
+        MPI_Send_init(&send,LENGTH,MPI_INT,my_rank-1,0,MPI_COMM_WORLD,&request_left_send);
         // right side
         MPI_Recv_init(&recieved,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_recieve);
-        MPI_Send_init(&random_numbers,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_send);
+        MPI_Send_init(&send,LENGTH,MPI_INT,my_rank+1,0,MPI_COMM_WORLD,&request_right_send);
 
         has_left = 1;
         has_right = 1;
@@ -166,6 +168,8 @@ int main(int argc, char* argv[ ])
             if(my_rank%2==0){
                 // We are in an even rank => communicate with right side
                 if(!has_right)continue;
+                //Preparing what we want to send to counter race condition
+                copy_array(send,random_numbers,LENGTH);
                 MPI_Start(&request_right_send);
                 MPI_Start(&request_right_recieve);
                 MPI_Wait(&request_right_recieve,&status_right_recieve);
@@ -177,6 +181,7 @@ int main(int argc, char* argv[ ])
             else{
                 // We are in an odd rank => communicate with left side
                 if(!has_left)continue;
+                copy_array(send,random_numbers,LENGTH);
                 MPI_Start(&request_left_send);
                 MPI_Start(&request_left_recieve);
                 MPI_Wait(&request_left_recieve,&status_left_recieve);
@@ -191,6 +196,7 @@ int main(int argc, char* argv[ ])
             if(my_rank%2==0){
                 // We are in an even rank
                 if(!has_left)continue;
+                copy_array(send,random_numbers,LENGTH);
                 MPI_Start(&request_left_send);
                 MPI_Start(&request_left_recieve);
                 MPI_Wait(&request_left_recieve,&status_left_recieve);
@@ -201,6 +207,7 @@ int main(int argc, char* argv[ ])
                 // We are in an odd rank
                 // We are in an even rank => communicate with right side
                 if(!has_right)continue;
+                copy_array(send,random_numbers,LENGTH);
                 MPI_Start(&request_right_send);
                 MPI_Start(&request_right_recieve);
                 MPI_Wait(&request_right_recieve,&status_right_recieve);
@@ -221,6 +228,7 @@ int main(int argc, char* argv[ ])
         //Printing all recieved numbers
         MPI_Status status;
         Node * runner = Headnode->next;
+        copy_array(Headnode->numbers,random_numbers,LENGTH);
         printf("Danach \n");
         int buffer[LENGTH];
         for(size_t i = 1; i < size; i++){
@@ -229,8 +237,9 @@ int main(int argc, char* argv[ ])
             copy_array(runner->numbers,buffer,LENGTH);
             runner = runner->next;
         }
-        runner = Headnode;
-        while(runner){
+        runner = Headnode;        
+        while(runner){    
+            printf("Process %d : ",runner->rank);        
             print_int_array(LENGTH,runner->numbers);            
             runner = runner->next;
         }
