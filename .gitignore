@@ -4,3 +4,4 @@
 .dotnet/
 .ssh/
 .vscode-server/
+build/
