@@ -59,25 +59,11 @@ int main(int argc, char* argv[ ])
 
     
     create_random_array(LENGTH, random_numbers, my_rank);// Create an array of random numbers
-    // create_random_array(LENGTH, random_numbers2, 10);// Create an array of random numbers
-    // print_int_array(LENGTH,random_numbers);
-    
-    // extract_wanted_numbers(LENGTH,random_numbers,random_numbers2,0);
-    // print_int_array(LENGTH,random_numbers);
     if(size < 2){
         MPI_Finalize();
         printf("This Programm has undefined behaviour with only one Process. Aborting...\n");
         return 0;
     }
-    // print_int_array_with_process(LENGTH,random_numbers,my_rank);
-    // if(my_rank == 0){
-    //     printf("Recieving all unsorted Array to Process 0\n");
-    //     struct List {
-    //         numbers[LENGTH];
-
-    //     }
-    //     }
-    // }
     if(my_rank ==0){
         //creating List with all recieved numbers
         MPI_Status status; 
