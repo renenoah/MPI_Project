@@ -5,5 +5,5 @@
 .ssh/
 .vscode-server/
 build/
-.o
+*.o
 .vscode/
