@@ -9,4 +9,6 @@ $(path_to_lib)help.o: $(path_to_lib)help.c
 	mpicc -c $(path_to_lib)help.c -o $(path_to_lib)/help.o
 run: 
 	mpiexec -np $(number_of_ps) ./build/main 
+help: 
+	echo "Use make to Compile and make run to run the Programm"
 	
