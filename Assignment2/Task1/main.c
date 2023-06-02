@@ -1,18 +1,15 @@
 /************************************************************************/
-/* Program: a.c                                                  */ 
+/* Program: main.c                                                  */ 
 /* Author: Rene Noah Kouache    s1750463@stud.uni-farnkfurt.de                                 */
 /* matriclenumber:   5782459                                                   */
-/* Assignment : 1                                                       */	
-/* Task: 2a                                                              */
-/* Parameters: array lenght of random numbers                                                       */
+/* Assignment : 2                                                      */	
+/* Task: 1                                                             */
+/* Parameters:                                                      */
 /* Environment variables: no                                            */
 /*                                                                      */
 /* Description:                                                         */
-/*                                                                      */
-/*     Each process calculates min, max and sum of an array thats filled with random numbers                     */
-/*      The size of the array is determined by an console input Parameter
- Each Process will send the solution to the next Process in line. The Proces will be send sequentally to all Processes one by one. The last process will send it to
- the first again. The first Process will then take the tim and print the answers.                                                                */	
+/* Realisation of the odd-Even Transportation Sort                                                                      */
+	
 /*                           */
 /*                                         */
 /*                                                                      */
@@ -64,6 +61,7 @@ int main(int argc, char* argv[ ])
         printf("This Programm has undefined behaviour with only one Process. Aborting...\n");
         return 0;
     }
+    //This Area is only for having an celan output of all answers
     if(my_rank ==0){
         //creating List with all recieved numbers
         MPI_Status status; 
@@ -99,6 +97,8 @@ int main(int argc, char* argv[ ])
         MPI_Send ( &random_numbers, LENGTH, MPI_INT, 0, tag, MPI_COMM_WORLD);		
 
     }
+    //End of Area
+
 
     qsort( random_numbers, LENGTH, sizeof(int),compare);
 
@@ -205,11 +205,9 @@ int main(int argc, char* argv[ ])
         }
     }
 
-    // print_int_array(LENGTH,random_numbers);
     
-    // print_int_array_with_process(LENGTH,random_numbers,my_rank);
 
-	
+	//This Area is only for having an celan output of all answers
     if(my_rank == 0){
         //Printing all recieved numbers
         MPI_Status status;
@@ -240,6 +238,7 @@ int main(int argc, char* argv[ ])
     else{
         MPI_Send ( &random_numbers, LENGTH, MPI_INT, 0, tag, MPI_COMM_WORLD);	
     }
+    //End of Area
 
     MPI_Finalize();		// finalizing MPI interface
 	return 0;		// end of progam with exit code 0 

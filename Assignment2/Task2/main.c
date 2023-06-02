@@ -1,18 +1,16 @@
 /************************************************************************/
-/* Program: a.c                                                  */ 
+/* Program: main.c                                                 */ 
 /* Author: Rene Noah Kouache    s1750463@stud.uni-farnkfurt.de                                 */
 /* matriclenumber:   5782459                                                   */
-/* Assignment : 1                                                       */	
-/* Task: 2a                                                              */
-/* Parameters: array lenght of random numbers                                                       */
+/* Assignment : 2                                                       */	
+/* Task: 2                                                        */
+/* Parameters:                                                       */
 /* Environment variables: no                                            */
 /*                                                                      */
-/* Description:                                                         */
-/*                                                                      */
-/*     Each process calculates min, max and sum of an array thats filled with random numbers                     */
-/*      The size of the array is determined by an console input Parameter
- Each Process will send the solution to the next Process in line. The Proces will be send sequentally to all Processes one by one. The last process will send it to
- the first again. The first Process will then take the tim and print the answers.                                                                */	
+/* Description:   Each Process calculates on his intervall the  3/8 Simpson Rule                                                  */
+
+/* The result will be send too all processes with the butterfly Algorithmus                                                                      */
+/*                                                                   */	
 /*                           */
 /*                                         */
 /*                                                                      */
@@ -31,11 +29,8 @@
 double first_math_function(double x);
 double second_math_function(double x);
 
-int main(int argc, char* argv[ ]){
-    
-    int test[3];    
-    //Rank 0 needs to communicate with the user an recieving all data
-        /* some declaration of needed variables */
+int main(int argc, char* argv[ ]){    
+
 	int my_rank, size; 				// rank of the process, number of processes
 	MPI_Status status;
     
@@ -48,9 +43,6 @@ int main(int argc, char* argv[ ]){
     int selected_function;
     int pos = 0;
 
-    // int random_numbers2[LENGTH];
-
-	/* Start of MPI part*/
 
 	MPI_Init(&argc, &argv);		 		// initializing of MPI-Interface
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank); 	// get your rank    
@@ -79,11 +71,10 @@ int main(int argc, char* argv[ ]){
         MPI_Unpack(buffer,BUFFER_SIZE,&pos,&integration_upper_limit,1,MPI_DOUBLE,MPI_COMM_WORLD);
         MPI_Unpack(buffer,BUFFER_SIZE,&pos,&number_of_intervals,1,MPI_INT,MPI_COMM_WORLD);
         MPI_Unpack(buffer,BUFFER_SIZE,&pos,&selected_function,1,MPI_INT,MPI_COMM_WORLD);
-        // printf("Prozess %d: Anzahl der Intervalle %d, a: %f, b: %f, Auswahl Funktion: %d\n",my_rank,number_of_intervals,integration_lower_limit,integration_upper_limit,selected_function);
 
     }
     double (*math_func)(double);
-    if(selected_function){
+    if(selected_function == 1){
         math_func = first_math_function;
     }
     else{
@@ -117,18 +108,15 @@ int main(int argc, char* argv[ ]){
     int mask = 1<< ((int)log2(size)-1);
     double recieved_result = 0;
     int partner_rank = 0;
+    MPI_Request recieve_req;
+    MPI_Request send_req;
     while(mask > 0){
-        partner_rank = my_rank ^ mask;
-        if(my_rank < partner_rank){
-            MPI_Send(&result,1,MPI_DOUBLE,partner_rank,0,MPI_COMM_WORLD);
-            MPI_Recv(&recieved_result,1,MPI_DOUBLE,partner_rank,0,MPI_COMM_WORLD, &status);
-            result += recieved_result;
-        } 
-        else{
-            MPI_Recv(&recieved_result,1,MPI_DOUBLE,partner_rank,0,MPI_COMM_WORLD, &status);
-            MPI_Send(&result,1,MPI_DOUBLE,partner_rank,0,MPI_COMM_WORLD);
-            result += recieved_result;
-        }
+        partner_rank = my_rank ^ mask;        
+        MPI_Isend(&result,1,MPI_DOUBLE,partner_rank,0,MPI_COMM_WORLD,&send_req);
+        MPI_Irecv(&recieved_result,1,MPI_DOUBLE,partner_rank,0,MPI_COMM_WORLD, &recieve_req);
+        MPI_Wait(&send_req,&status);
+        MPI_Wait(&recieve_req,&status);
+        result += recieved_result;
         mask >>=1;
     }
     printf("Prozess: %d Gesamtergebnis: %f\n",my_rank,result);
@@ -139,9 +127,9 @@ int main(int argc, char* argv[ ]){
     return 0;
 }
 double first_math_function(double x){
-    return 1.0;
+    return sqrt(3*x+2);
 }
 double second_math_function(double x){
-    return 1.0;
+    return (log(7*x))/x;
 }
 
