@@ -1,8 +1,8 @@
 path_to_lib = /home/lab/2023/s1750463/libs/
-number_of_ps = 3
+number_of_ps = 8
 build/main: main.o $(path_to_lib)help.o
 	rm -rf build && mkdir build
-	mpicc main.o $(path_to_lib)help.o -o ./build/main 
+	mpicc -lm main.o $(path_to_lib)help.o -o ./build/main 
 main.o: main.c
 	mpicc -c main.c
 $(path_to_lib)help.o: $(path_to_lib)help.c

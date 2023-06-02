@@ -25,18 +25,19 @@
 #include <errno.h>	    // system error numbers
 #include <time.h>
 #include <stdlib.h>
+#include <math.h>
 #include "/home/lab/2023/s1750463/libs/help.h"
 
 double first_math_function(double x);
 double second_math_function(double x);
 
 int main(int argc, char* argv[ ]){
-    printf("Hello World\n");
+    
     int test[3];    
     //Rank 0 needs to communicate with the user an recieving all data
         /* some declaration of needed variables */
 	int my_rank, size; 				// rank of the process, number of processes
-	int tag = 0; 
+	MPI_Status status;
     
 
 
@@ -52,7 +53,7 @@ int main(int argc, char* argv[ ]){
 	/* Start of MPI part*/
 
 	MPI_Init(&argc, &argv);		 		// initializing of MPI-Interface
-	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank); 	// get your rank
+	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank); 	// get your rank    
 	MPI_Comm_size(MPI_COMM_WORLD, &size); 
     if(my_rank == 0){        
         printf("Wilkommen\n");
@@ -78,7 +79,7 @@ int main(int argc, char* argv[ ]){
         MPI_Unpack(buffer,BUFFER_SIZE,&pos,&integration_upper_limit,1,MPI_DOUBLE,MPI_COMM_WORLD);
         MPI_Unpack(buffer,BUFFER_SIZE,&pos,&number_of_intervals,1,MPI_INT,MPI_COMM_WORLD);
         MPI_Unpack(buffer,BUFFER_SIZE,&pos,&selected_function,1,MPI_INT,MPI_COMM_WORLD);
-        printf("Prozess %d: Anzahl der Intervalle %d, a: %f, b: %f, Auswahl Funktion: %d\n",my_rank,number_of_intervals,integration_lower_limit,integration_upper_limit,selected_function);
+        // printf("Prozess %d: Anzahl der Intervalle %d, a: %f, b: %f, Auswahl Funktion: %d\n",my_rank,number_of_intervals,integration_lower_limit,integration_upper_limit,selected_function);
 
     }
     double (*math_func)(double);
@@ -92,6 +93,7 @@ int main(int argc, char* argv[ ]){
     double local_a = integration_lower_limit + my_rank * h;
     double local_b = integration_lower_limit + (my_rank+1) * h;
     double local_h =  (local_b - local_a) / (double)number_of_intervals;
+    
     //Ergebnis berechnen
     size_t length = (local_b-local_a)/local_h+1; 
     double x_werte[length];
@@ -101,15 +103,36 @@ int main(int argc, char* argv[ ]){
         k++;       
     }
     double result = 0, subresult_one = 0, subresult_two = 0;
-    for(size_t i = 1; i < (length-1)/3; i++){
+    for(size_t i = 1; i < (length-1)/3 + 1; i++){
         subresult_one += math_func(x_werte[3*i-2]) + math_func(x_werte[3*i-1]);
     }
-    for(size_t i = 1; i < ((length-1)/3 - 1) ; i++){
+    for(size_t i = 1; i < ((length-1)/3 - 1) +1 ; i++){
         subresult_two += math_func(x_werte[3*i]);
     }
-    printf("Local h: %f, subresult_one : %f , subresulttwo: %f\n",local_h,subresult_one,subresult_two);
+    // printf("Local h: %f, subresult_one : %f , subresulttwo: %f\n",local_h,subresult_one,subresult_two);
     result = ((double)3.0 / (double)3.8) * local_h * (math_func(x_werte[0]) + (3*subresult_one) + (2* subresult_two) + math_func(x_werte[length-1]));
-    printf("%f\n",result);
+    printf("Prozess %d: Errechnetes Lokales Ergebnis %f für die a: %f bis b:%f mit h:%f\n",my_rank,result,local_a,local_b,local_h);
+
+    //Butterfly Algo
+    int mask = 1<< ((int)log2(size)-1);
+    double recieved_result = 0;
+    int partner_rank = 0;
+    while(mask > 0){
+        partner_rank = my_rank ^ mask;
+        if(my_rank < partner_rank){
+            MPI_Send(&result,1,MPI_DOUBLE,partner_rank,0,MPI_COMM_WORLD);
+            MPI_Recv(&recieved_result,1,MPI_DOUBLE,partner_rank,0,MPI_COMM_WORLD, &status);
+            result += recieved_result;
+        } 
+        else{
+            MPI_Recv(&recieved_result,1,MPI_DOUBLE,partner_rank,0,MPI_COMM_WORLD, &status);
+            MPI_Send(&result,1,MPI_DOUBLE,partner_rank,0,MPI_COMM_WORLD);
+            result += recieved_result;
+        }
+        mask >>=1;
+    }
+    printf("Prozess: %d Gesamtergebnis: %f\n",my_rank,result);
+
 
     MPI_Finalize();		// finalizing MPI interface
     
